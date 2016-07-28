@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ElevatorResult {
 
-    private List<Integer> floorsTravelled = new ArrayList<>();
+    private final List<Integer> floorsTravelled = new ArrayList<>();
     private int distanceTravelled;
 
     public void addToFloorsTravelled(int floor) {
@@ -29,6 +29,27 @@ public class ElevatorResult {
 
     public void setDistanceTravelled(int distanceTravelled) {
         this.distanceTravelled = distanceTravelled;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ElevatorResult that = (ElevatorResult) o;
+
+        if (distanceTravelled != that.distanceTravelled) return false;
+        if (floorsTravelled != null ? !floorsTravelled.equals(that.floorsTravelled) : that.floorsTravelled != null)
+            return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = floorsTravelled != null ? floorsTravelled.hashCode() : 0;
+        result = 31 * result + distanceTravelled;
+        return result;
     }
 
     @Override

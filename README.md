@@ -1,4 +1,4 @@
-****************************************** Notes *****************************************************
+****************************************** Notes  *****************************************************
 I have used Maven assembly mechanism, Spring boot and REST WebServices to create this application.
 This means the application can be run as a standalone application.
 Follow the steps below to run this application
@@ -8,7 +8,7 @@ Follow the steps below to run this application
  - For unix -> $ sh devElevatorApp.sh         For Windows -> $ devElevatorApp.bat
  - This will start the applicationm you could now test it directly in the console by entering the parameters or use the webservice
  - To call the webservice using a rest client use the URL below
-URL - > http://localhost:55511/elevator/result?fileName=C:/ElevatorRequestFile.txt&mode=a
+URL - > http://localhost:55511/elevator/result?fileName=C:/ElevatorRequestFile.txt&elevatorMode=a
 
 
 Alternatively, run it directly through IDE like Intellij by creating a debug config using following parameter

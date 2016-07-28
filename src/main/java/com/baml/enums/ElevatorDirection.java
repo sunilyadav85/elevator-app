@@ -1,5 +1,5 @@
 package com.baml.enums;
 
-public enum Direction {
+public enum ElevatorDirection {
     UP, DOWN, NA
 }

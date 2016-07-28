@@ -1,21 +1,22 @@
 package com.baml.service;
 
 import com.baml.bean.Elevator;
-import com.baml.bean.ElevatorResult;
 import com.baml.bean.MoveRequest;
-import com.baml.enums.Direction;
-import com.google.common.collect.Iterables;
+import com.baml.enums.ElevatorDirection;
+import com.google.common.collect.Lists;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.TreeSet;
+
+import static com.baml.enums.ElevatorDirection.*;
 
 @Component
 public class ElevatorServiceHelper {
 
-    protected int evaluateDistanceTravelled(ElevatorResult elevatorResult) {
+    protected int getDistanceTravelled(List<Integer> floorsTravelled) {
         int distanceTravelled = 0;
-        List<Integer> floorsTravelled = elevatorResult.getFloorsTravelled();
         for (int i = 0, j = 1; j < floorsTravelled.size(); i++, j++) {
             distanceTravelled += Math.abs(floorsTravelled.get(i) - floorsTravelled.get(j));
         }
@@ -24,30 +25,38 @@ public class ElevatorServiceHelper {
 
     protected void updateElevatorDirection(Elevator elevator) {
         if (elevator.getMoveRequests().isEmpty()) {
-            elevator.setDirection(Direction.NA);
-        } else if (Direction.DOWN == elevator.getDirection()) {
-            elevator.setDirection(Direction.UP);
-        } else if (Direction.UP == elevator.getDirection()) {
-            elevator.setDirection(Direction.DOWN);
+            elevator.setElevatorDirection(NA);
+        } else if (DOWN == elevator.getElevatorDirection()) {
+            elevator.setElevatorDirection(UP);
+        } else if (UP == elevator.getElevatorDirection()) {
+            elevator.setElevatorDirection(DOWN);
         }
     }
 
-    protected void addFloors(MoveRequest moveRequestToProcess, TreeSet<Integer> floorsToTravel) {
-        floorsToTravel.add(moveRequestToProcess.getFromFloor());
-        floorsToTravel.add(moveRequestToProcess.getToFloor());
+    protected Collection<Integer> getFloorsInSameDirection(int lastFloorTravelled, MoveRequest moveRequest, ElevatorDirection elevatorDirection) {
+        return getFloorsInSameDirection(lastFloorTravelled, Lists.newArrayList(moveRequest), elevatorDirection);
     }
 
-    protected void move(ElevatorResult elevatorResult, TreeSet<Integer> floorsToTravel, Direction elevatorDirection) {
+    protected Collection<Integer> getFloorsInSameDirection(int lastFloorTravelled, Collection<MoveRequest> moveRequests, ElevatorDirection elevatorDirection) {
+        TreeSet<Integer> floorsToTravel = getAllFloorsFromMoveRequests(moveRequests);
 
-        if (Direction.DOWN == elevatorDirection) {
+        if (DOWN == elevatorDirection) {
             floorsToTravel = (TreeSet<Integer>) floorsToTravel.descendingSet();
         }
 
-        int lastFloorTravelled = Iterables.getLast(elevatorResult.getFloorsTravelled());
         if (lastFloorTravelled == floorsToTravel.first()) {
             floorsToTravel.pollFirst();
         }
-        elevatorResult.addToFloorsTravelled(floorsToTravel);
-        floorsToTravel.clear();
+        return floorsToTravel;
+    }
+
+    protected ElevatorDirection getElevatorDirection(Elevator elevator, MoveRequest moveRequestToProcess) {
+        return (NA == elevator.getElevatorDirection()) ? moveRequestToProcess.getElevatorDirection() : elevator.getElevatorDirection();
+    }
+
+    private TreeSet<Integer> getAllFloorsFromMoveRequests(Collection<MoveRequest> moveRequests) {
+        final TreeSet<Integer> floorsToTravel = new TreeSet<>();
+        moveRequests.forEach(moveRequest -> floorsToTravel.addAll(Lists.newArrayList(moveRequest.getFromFloor(), moveRequest.getToFloor())));
+        return floorsToTravel;
     }
 }

@@ -1,10 +1,12 @@
 package com.baml.app;
 
-import com.baml.controller.ElevatorAppConsoleController;
+import com.baml.bean.ElevatorResult;
+import com.baml.controller.ElevatorAppController;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -25,7 +27,7 @@ public class ElevatorApp implements ApplicationContextAware {
     private static ApplicationContext applicationContext;
 
     @Autowired
-    private ElevatorAppConsoleController consoleController;
+    private ElevatorAppController elevatorAppController;
 
     public static void main(String[] args) {
 
@@ -62,9 +64,13 @@ public class ElevatorApp implements ApplicationContextAware {
         String fileName = scanner.nextLine().trim();
 
         System.out.println("Please enter Mode (A/B): ");
-        char mode = scanner.next().trim().charAt(0);
+        String elevatorMode = scanner.next().trim();
 
-        consoleController.process(fileName, mode);
+        Collection<ElevatorResult> elevatorResults = elevatorAppController.process(fileName, elevatorMode);
+        elevatorResults.forEach(elevatorResult -> {
+            System.out.print(StringUtils.join(elevatorResult.getFloorsTravelled(), " "));
+            System.out.println(String.format(" (%d)", elevatorResult.getDistanceTravelled()));
+        });
     }
 
     private static String getArgOrProperty(String argOrPropertyName, String[] args) {

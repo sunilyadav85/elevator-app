@@ -4,160 +4,74 @@ import com.baml.bean.Elevator;
 import com.baml.bean.ElevatorResult;
 import com.baml.bean.MoveRequest;
 import com.baml.config.ElevatorTestConfig;
+import com.baml.helper.ElevatorTestHelper;
+import com.google.common.collect.Lists;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static com.baml.enums.ElevatorDirection.DOWN;
+import static com.baml.enums.ElevatorDirection.UP;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @ContextConfiguration(classes = ElevatorTestConfig.class)
 public class ModeAElevatorServiceTest {
 
-    @Autowired
-    @Qualifier("modeAElevatorService")
-    private ElevatorService classToTest;
+    @InjectMocks
+    private ModeAElevatorService classToTest;
+
+    @InjectMocks
+    private ElevatorTestHelper elevatorTestHelper;
+
+    @Spy
+    private Elevator elevator;
+
+    @Mock
+    private ElevatorServiceHelper elevatorServiceHelper;
 
     @Test
-    public void testOperateInput1() throws Exception {
+    public void shouldOperate() throws Exception {
         // Given
-        Elevator elevator = new Elevator();
-        elevator.setInitialFloor(10);
+        LinkedList<MoveRequest> allMoveRequests = elevatorTestHelper.getAllMoveRequest();
 
-        List<MoveRequest> moveRequests = new LinkedList<>();
-        moveRequests.add(new MoveRequest(8, 1));
-        elevator.addMoveRequests(moveRequests);
+        given(elevator.getMoveRequests()).willReturn(allMoveRequests);
+        given(elevator.getInitialFloor()).willReturn(3);
 
-        List<Integer> expectedFloorTravelled = IntStream.of(10, 8, 1).boxed().collect(Collectors.toList());
+        given(elevatorServiceHelper.getElevatorDirection(elevator, allMoveRequests.get(0))).willReturn(UP);
+        given(elevatorServiceHelper.getElevatorDirection(elevator, allMoveRequests.get(1))).willReturn(UP);
+        given(elevatorServiceHelper.getElevatorDirection(elevator, allMoveRequests.get(2))).willReturn(UP);
+        given(elevatorServiceHelper.getElevatorDirection(elevator, allMoveRequests.get(3))).willReturn(UP);
+        given(elevatorServiceHelper.getElevatorDirection(elevator, allMoveRequests.get(4))).willReturn(DOWN);
+
+        given(elevatorServiceHelper.getFloorsInSameDirection(3, allMoveRequests.get(0), UP)).willReturn(Lists.newArrayList(7, 9));
+        given(elevatorServiceHelper.getFloorsInSameDirection(9, allMoveRequests.get(1), UP)).willReturn(Lists.newArrayList(3, 7));
+        given(elevatorServiceHelper.getFloorsInSameDirection(7, allMoveRequests.get(2), UP)).willReturn(Lists.newArrayList(5, 8));
+        given(elevatorServiceHelper.getFloorsInSameDirection(8, allMoveRequests.get(3), UP)).willReturn(Lists.newArrayList(7, 11));
+        given(elevatorServiceHelper.getFloorsInSameDirection(11, allMoveRequests.get(4), DOWN)).willReturn(Lists.newArrayList(1));
+
+        List<Integer> expectedFloorsTravelled = Lists.newArrayList(3, 7, 9, 3, 7, 5, 8, 7, 11, 1);
+        given(elevatorServiceHelper.getDistanceTravelled(expectedFloorsTravelled)).willReturn(36);
 
         // When
-        ElevatorResult elevatorResult = classToTest.operate(elevator);
+        ElevatorResult result = classToTest.operate(elevator);
 
         // Then
-        assertThat(elevatorResult.getDistanceTravelled(), equalTo(9));
-        assertThat(expectedFloorTravelled.equals(elevatorResult.getFloorsTravelled()), equalTo(true));
-    }
+        ElevatorResult expectedResult = elevatorTestHelper.getElevatorResultsForModeA().get(3);
+        assertThat(result.getDistanceTravelled(), equalTo(expectedResult.getDistanceTravelled()));
+        assertThat(result.getFloorsTravelled(), equalTo(expectedResult.getFloorsTravelled()));
 
-    @Test
-    public void testOperateInput2() throws Exception {
-        // Given
-        Elevator elevator = new Elevator();
-        elevator.setInitialFloor(9);
-
-        List<MoveRequest> moveRequests = new LinkedList<>();
-        moveRequests.add(new MoveRequest(1, 5));
-        moveRequests.add(new MoveRequest(1, 6));
-        moveRequests.add(new MoveRequest(1, 5));
-        elevator.addMoveRequests(moveRequests);
-
-        List<Integer> expectedFloorTravelled = IntStream.of(9, 1, 5, 1, 6, 1, 5).boxed().collect(Collectors.toList());
-
-        // When
-        ElevatorResult elevatorResult = classToTest.operate(elevator);
-
-        // Then
-        assertThat(elevatorResult.getDistanceTravelled(), equalTo(30));
-        assertThat(expectedFloorTravelled.equals(elevatorResult.getFloorsTravelled()), equalTo(true));
-    }
-
-    @Test
-    public void testOperateInput3() throws Exception {
-        // Given
-        Elevator elevator = new Elevator();
-        elevator.setInitialFloor(2);
-
-        List<MoveRequest> moveRequests = new LinkedList<>();
-        moveRequests.add(new MoveRequest(4, 1));
-        moveRequests.add(new MoveRequest(4, 2));
-        moveRequests.add(new MoveRequest(6, 8));
-        elevator.addMoveRequests(moveRequests);
-
-        List<Integer> expectedFloorTravelled = IntStream.of(2, 4, 1, 4, 2, 6, 8).boxed().collect(Collectors.toList());
-
-        // When
-        ElevatorResult elevatorResult = classToTest.operate(elevator);
-
-        // Then
-        assertThat(elevatorResult.getDistanceTravelled(), equalTo(16));
-        assertThat(expectedFloorTravelled.equals(elevatorResult.getFloorsTravelled()), equalTo(true));
-    }
-
-    @Test
-    public void testOperateInput4() throws Exception {
-        // Given
-        Elevator elevator = new Elevator();
-        elevator.setInitialFloor(3);
-
-        List<MoveRequest> moveRequests = new LinkedList<>();
-        moveRequests.add(new MoveRequest(7, 9));
-        moveRequests.add(new MoveRequest(3, 7));
-        moveRequests.add(new MoveRequest(5, 8));
-        moveRequests.add(new MoveRequest(7, 11));
-        moveRequests.add(new MoveRequest(11, 1));
-        elevator.addMoveRequests(moveRequests);
-
-        List<Integer> expectedFloorTravelled = IntStream.of(3, 7, 9, 3, 7, 5, 8, 7, 11, 1).boxed().collect(Collectors.toList());
-
-        // When
-        ElevatorResult elevatorResult = classToTest.operate(elevator);
-
-        // Then
-        assertThat(elevatorResult.getDistanceTravelled(), equalTo(36));
-        assertThat(expectedFloorTravelled.equals(elevatorResult.getFloorsTravelled()), equalTo(true));
-    }
-
-    @Test
-    public void testOperateInput5() throws Exception {
-        // Given
-        Elevator elevator = new Elevator();
-        elevator.setInitialFloor(7);
-
-        List<MoveRequest> moveRequests = new LinkedList<>();
-        moveRequests.add(new MoveRequest(11, 6));
-        moveRequests.add(new MoveRequest(10, 5));
-        moveRequests.add(new MoveRequest(6, 8));
-        moveRequests.add(new MoveRequest(7, 4));
-        moveRequests.add(new MoveRequest(12, 7));
-        moveRequests.add(new MoveRequest(8, 9));
-        elevator.addMoveRequests(moveRequests);
-
-        List<Integer> expectedFloorTravelled = IntStream.of(7, 11, 6, 10, 5, 6, 8, 7, 4, 12, 7, 8, 9).boxed().collect(Collectors.toList());
-
-        // When
-        ElevatorResult elevatorResult = classToTest.operate(elevator);
-
-        // Then
-        assertThat(elevatorResult.getDistanceTravelled(), equalTo(40));
-        assertThat(expectedFloorTravelled.equals(elevatorResult.getFloorsTravelled()), equalTo(true));
-    }
-
-    @Test
-    public void testOperateInput6() throws Exception {
-        // Given
-        Elevator elevator = new Elevator();
-        elevator.setInitialFloor(6);
-
-        List<MoveRequest> moveRequests = new LinkedList<>();
-        moveRequests.add(new MoveRequest(1, 8));
-        moveRequests.add(new MoveRequest(6, 8));
-        elevator.addMoveRequests(moveRequests);
-
-        List<Integer> expectedFloorTravelled = IntStream.of(6, 1, 8, 6, 8).boxed().collect(Collectors.toList());
-
-        // When
-        ElevatorResult elevatorResult = classToTest.operate(elevator);
-
-        // Then
-        assertThat(elevatorResult.getDistanceTravelled(), equalTo(16));
-        assertThat(expectedFloorTravelled.equals(elevatorResult.getFloorsTravelled()), equalTo(true));
+        verify(elevatorServiceHelper, times(5)).updateElevatorDirection(elevator);
     }
 }

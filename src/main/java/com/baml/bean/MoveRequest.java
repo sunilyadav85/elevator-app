@@ -1,10 +1,10 @@
 package com.baml.bean;
 
-import com.baml.enums.Direction;
+import com.baml.enums.ElevatorDirection;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
-import static com.baml.enums.Direction.DOWN;
-import static com.baml.enums.Direction.UP;
+import static com.baml.enums.ElevatorDirection.DOWN;
+import static com.baml.enums.ElevatorDirection.UP;
 
 public class MoveRequest {
 
@@ -13,13 +13,13 @@ public class MoveRequest {
 
     private final int fromFloor;
     private final int toFloor;
-    private final Direction direction;
+    private final ElevatorDirection elevatorDirection;
 
     public MoveRequest(int fromFloor, int toFloor) {
         validateMoveRequest(fromFloor, toFloor);
         this.fromFloor = fromFloor;
         this.toFloor = toFloor;
-        direction = fromFloor < toFloor ? UP : DOWN;
+        elevatorDirection = fromFloor < toFloor ? UP : DOWN;
     }
 
     public void validateMoveRequest(int fromFloor, int toFloor) {
@@ -35,8 +35,8 @@ public class MoveRequest {
         }
     }
 
-    public Direction getDirection() {
-        return direction;
+    public ElevatorDirection getElevatorDirection() {
+        return elevatorDirection;
     }
 
     public int getFromFloor() {
@@ -45,6 +45,28 @@ public class MoveRequest {
 
     public int getToFloor() {
         return toFloor;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MoveRequest that = (MoveRequest) o;
+
+        if (fromFloor != that.fromFloor) return false;
+        if (toFloor != that.toFloor) return false;
+        if (elevatorDirection != that.elevatorDirection) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = fromFloor;
+        result = 31 * result + toFloor;
+        result = 31 * result + elevatorDirection.hashCode();
+        return result;
     }
 
     @Override

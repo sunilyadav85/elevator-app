@@ -3,12 +3,15 @@ package com.baml.service;
 import com.baml.bean.Elevator;
 import com.baml.bean.ElevatorResult;
 import com.baml.bean.MoveRequest;
-import com.baml.enums.Direction;
+import com.baml.enums.ElevatorDirection;
+import com.google.common.collect.Iterables;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Queue;
-import java.util.TreeSet;
 
 @Service("modeBElevatorService")
 public class ModeBElevatorService implements ElevatorService {
@@ -22,22 +25,25 @@ public class ModeBElevatorService implements ElevatorService {
         Queue<MoveRequest> allMoveRequests = elevator.getMoveRequests();
         ElevatorResult elevatorResult = new ElevatorResult();
         elevatorResult.addToFloorsTravelled(elevator.getInitialFloor());
-        TreeSet<Integer> floorsToTravel = new TreeSet<>();
+        List<MoveRequest> moveRequestsInSameDirection = new ArrayList<>();
 
         while (allMoveRequests.iterator().hasNext()) {
+
             MoveRequest moveRequestToProcess = allMoveRequests.poll();
             MoveRequest nextMoveRequest = allMoveRequests.peek();
 
-            Direction elevatorDirection = (Direction.NA == elevator.getDirection()) ? moveRequestToProcess.getDirection() : elevator.getDirection();
-            elevatorServiceHelper.addFloors(moveRequestToProcess, floorsToTravel);
-
-            if ((nextMoveRequest != null && nextMoveRequest.getDirection() != elevatorDirection) || allMoveRequests.isEmpty()) {
-                elevatorServiceHelper.move(elevatorResult, floorsToTravel, elevatorDirection);
+            ElevatorDirection elevatorDirection = elevatorServiceHelper.getElevatorDirection(elevator, moveRequestToProcess);
+            moveRequestsInSameDirection.add(moveRequestToProcess);
+            if ((nextMoveRequest != null && nextMoveRequest.getElevatorDirection() != elevatorDirection) || allMoveRequests.isEmpty()) {
+                int lastFloorTravelled = Iterables.getLast(elevatorResult.getFloorsTravelled());
+                Collection<Integer> floorsInSameDirection = elevatorServiceHelper.getFloorsInSameDirection(lastFloorTravelled, moveRequestsInSameDirection, elevatorDirection);
+                elevatorResult.addToFloorsTravelled(floorsInSameDirection);
+                moveRequestsInSameDirection.clear();
                 elevatorServiceHelper.updateElevatorDirection(elevator);
             }
         }
 
-        int distanceTravelled = elevatorServiceHelper.evaluateDistanceTravelled(elevatorResult);
+        int distanceTravelled = elevatorServiceHelper.getDistanceTravelled(elevatorResult.getFloorsTravelled());
         elevatorResult.setDistanceTravelled(distanceTravelled);
 
         return elevatorResult;
